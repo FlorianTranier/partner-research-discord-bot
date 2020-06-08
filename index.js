@@ -78,6 +78,12 @@ client.on('message', async message => {
         await message.delete()
     }
 
+    if (parsedMessage[0] === '-setpschannel' && parsedMessage[1] === undefined) {
+        const channel = client.channels.cache.find((channel) => channel.id === message.channel.id)
+
+        saveChannel(channel.guild.id, channel.id)
+    }
+
     if (parsedMessage[0] === '-clean' && parsedMessage[1] === undefined) {
         const toDelete = (await message.channel.messages.fetch({limit: 99}))
             .filter(msg => msg.author.id === client.user.id)
