@@ -89,7 +89,7 @@ client.on('message', async message => {
     if (parsedMessage[0] === '-clean' && parsedMessage[1] === undefined) {
         const toDelete = (await message.channel.messages.fetch({limit: 99}))
             .filter(msg => msg.author.id === client.user.id)
-        await message.channel.bulkDelete(toDelete)
+        await message.channel.bulkDelete(toDelete, true)
         await message.delete()
     }
 })
