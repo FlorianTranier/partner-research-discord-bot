@@ -1,6 +1,7 @@
 require('dotenv').config()
 const Discord = require('discord.js')
 const fs = require('fs')
+const axios = require('axios')
 const client = new Discord.Client()
 
 const saveChannel = (guildId, channelId) => {
@@ -31,7 +32,7 @@ const addMutedChannel = (guildId, channelId) => {
     fs.writeFileSync('mutedChannels.json', JSON.stringify(alreadyExistingChannels))
 }
 
-const createEmbedMessage = async (title, description, author, players) => {
+const createEmbedMessage = async (title, description, author, players, image) => {
     const message = new Discord.MessageEmbed()
     const voiceState = author.presence.member.voice
     message
@@ -39,8 +40,7 @@ const createEmbedMessage = async (title, description, author, players) => {
         .setTitle(title)
         .addField('Answering the call', description ? description : `Waiting for players`)
         .setAuthor(author.username, author.avatarURL())
-        
-    players.forEach(player => message.setImage(player.avatarURL()))
+        .setImage(image)
     
     if (voiceState && voiceState.channel) {
         const invite = await voiceState.channel.createInvite()
@@ -63,17 +63,20 @@ client.on('message', async message => {
     if (parsedMessage[0] === '-sp' && parsedMessage[1] !== undefined) {
         parsedMessage.shift()
         const game = parsedMessage.join(' ')
+        console.log(await axios.get('https://api.thecatapi.com/v1/images/search'))
+        const catImage = (await axios.get('https://api.thecatapi.com/v1/images/search')).data[0].url
 
         const botMessage = await message.channel.send(
             `@here `,
             await createEmbedMessage(`${message.author.username} wants to play at ${game}`,
-            ``, message.author, [])
+            ``, message.author, [], catImage)
         )
         botMessage.player = message.author
         botMessage.players = []
         botMessage.game = game
         botMessage.react('☝️')
         botMessage.originalContent = botMessage.embeds[0].title
+        botMessage.image = catImage
         await message.delete()
     }
 
@@ -107,7 +110,8 @@ client.on('messageReactionAdd', async (reaction, user) => {
                 reaction.message.originalContent,
                 updatedMessageContent,
                 reaction.message.player,
-                reaction.message.players
+                reaction.message.players,
+                reaction.message.image
             )
         )
     }
@@ -129,7 +133,8 @@ client.on('messageReactionRemove', async (reaction, user) => {
                 reaction.message.originalContent,
                 updatedMessageContent,
                 reaction.message.player,
-                reaction.message.players
+                reaction.message.players,
+                reaction.message.image
             )
         )
     }
@@ -148,7 +153,8 @@ client.on('voiceStateUpdate', async (oldVoiceState, newVoiceState) => {
             botChannel.lastMessage.originalContent,
             botChannel.lastMessage.embeds[0].description,
             botChannel.lastMessage.player,
-            botChannel.lastMessage.players
+            botChannel.lastMessage.players,
+            botChannel.lastMessage.image
         )
         botChannel.lastMessage.edit(updatedMessage)
     }
